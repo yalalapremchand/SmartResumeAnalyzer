@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Resume Analyzer</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- Chart.js (IMPORTANT – you were missing this ❌) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+<div class="container">
+
+    <h1><i class="fa-solid fa-file-lines"></i> Smart Resume Analyzer</h1>
+
+    <!-- Upload Form -->
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="resume" required>
+        <button type="submit">
+            <i class="fa-solid fa-magnifying-glass"></i> Analyze Resume
+        </button>
+    </form>
+
+    {% if score %}
+    <div class="card fade-in">
+
+        <!-- Resume Score -->
+        <h2>Resume Score</h2>
+        <div class="progress">
+            <div class="progress-bar" style="width: {{ score }}%">
+                {{ score }}%
+            </div>
+        </div>
+
+        <!-- Role -->
+        <p class="role">
+            <i class="fa-solid fa-user-tie"></i>
+            Best Fit Role: <b>{{ role }}</b>
+        </p>
+
+        <!-- Skills Found -->
+        <h3><i class="fa-solid fa-check"></i> Skills Found</h3>
+        <div class="skills">
+            {% for s in skills %}
+                <span class="tag success">{{ s }}</span>
+            {% endfor %}
+        </div>
+
+        <!-- Missing Skills -->
+        <h3><i class="fa-solid fa-triangle-exclamation"></i> Missing Skills</h3>
+        <div class="skills">
+            {% if missing_skills %}
+                {% for ms in missing_skills %}
+                    <span class="tag danger">{{ ms }}</span>
+                {% endfor %}
+            {% else %}
+                <span class="tag success">No missing skills 🎉</span>
+            {% endif %}
+        </div>
+
+        <!-- Chart -->
+        <h3><i class="fa-solid fa-chart-column"></i> Skill Overview</h3>
+        <canvas id="skillsChart" height="120"></canvas>
+
+        <!-- History -->
+        <a href="/history" class="history-link">
+            <i class="fa-solid fa-clock-rotate-left"></i> View Resume History
+        </a>
+
+    </div>
+    {% endif %}
+</div>
+
+<!-- Theme Toggle -->
+<button class="theme-toggle" onclick="toggleTheme()">
+    <i class="fa-solid fa-moon"></i>
+</button>
+
+<!-- JS -->
+<script>
+function toggleTheme() {
+    document.body.classList.toggle("dark");
+}
+</script>
+
+{% if skills %}
+<script>
+const ctx = document.getElementById('skillsChart').getContext('2d');
+
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: ['Skills Found', 'Missing Skills'],
+        datasets: [{
+            label: 'Skill Count',
+            data: [{{ skills|length }}, {{ missing_skills|length }}],
+            backgroundColor: ['#4caf50', '#e53935'],
+            borderRadius: 8
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: { stepSize: 1 }
+            }
+        }
+    }
+});
+</script>
+{% endif %}
+
+</body>
+</html>

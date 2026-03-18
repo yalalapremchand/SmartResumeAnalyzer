@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Resume History</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<h1>📜 Resume History</h1>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <th>ID</th>
+        <th>Filename</th>
+        <th>Score</th>
+        <th>Role</th>
+        <th>Skills Found</th>
+        <th>Missing Skills</th>
+    </tr>
+
+    {% for r in resumes %}
+    <tr>
+        <td>{{ r.id }}</td>
+        <td>{{ r.filename }}</td>
+        <td>{{ r.score }}%</td>
+        <td>{{ r.role }}</td>
+        <td>{{ r.skills_found }}</td>
+        <td>{{ r.missing_skills }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<br>
+<a href="/">⬅ Back to Analyzer</a>
+
+</body>
+</html>
