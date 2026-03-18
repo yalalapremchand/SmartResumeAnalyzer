@@ -9,19 +9,21 @@
 
     <!-- Font Awesome -->
     <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-    <!-- Chart.js (IMPORTANT – you were missing this ❌) -->
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
+
 <div class="container">
 
+    <!-- HEADER -->
     <h1><i class="fa-solid fa-file-lines"></i> Smart Resume Analyzer</h1>
 
-    <!-- Upload Form -->
-    <form method="POST" enctype="multipart/form-data">
+    <!-- UPLOAD FORM -->
+    <form method="POST" enctype="multipart/form-data" class="upload-box">
         <input type="file" name="resume" required>
         <button type="submit">
             <i class="fa-solid fa-magnifying-glass"></i> Analyze Resume
@@ -29,23 +31,25 @@
     </form>
 
     {% if score %}
-    <div class="card fade-in">
 
-        <!-- Resume Score -->
-        <h2>Resume Score</h2>
+    <!-- RESULT CARD -->
+    <div class="card">
+
+        <!-- SCORE -->
+        <h2><i class="fa-solid fa-chart-line"></i> Resume Score</h2>
         <div class="progress">
-            <div class="progress-bar" style="width: {{ score }}%">
+            <div class="progress-bar" style="width: {{ score }}%;">
                 {{ score }}%
             </div>
         </div>
 
-        <!-- Role -->
+        <!-- ROLE -->
         <p class="role">
             <i class="fa-solid fa-user-tie"></i>
             Best Fit Role: <b>{{ role }}</b>
         </p>
 
-        <!-- Skills Found -->
+        <!-- SKILLS FOUND -->
         <h3><i class="fa-solid fa-check"></i> Skills Found</h3>
         <div class="skills">
             {% for s in skills %}
@@ -53,7 +57,7 @@
             {% endfor %}
         </div>
 
-        <!-- Missing Skills -->
+        <!-- MISSING SKILLS -->
         <h3><i class="fa-solid fa-triangle-exclamation"></i> Missing Skills</h3>
         <div class="skills">
             {% if missing_skills %}
@@ -65,20 +69,22 @@
             {% endif %}
         </div>
 
-        <!-- Chart -->
+        <!-- CHART -->
         <h3><i class="fa-solid fa-chart-column"></i> Skill Overview</h3>
         <canvas id="skillsChart" height="120"></canvas>
 
-        <!-- History -->
+        <!-- HISTORY LINK -->
         <a href="/history" class="history-link">
             <i class="fa-solid fa-clock-rotate-left"></i> View Resume History
         </a>
 
     </div>
+
     {% endif %}
+
 </div>
 
-<!-- Theme Toggle -->
+<!-- THEME TOGGLE -->
 <button class="theme-toggle" onclick="toggleTheme()">
     <i class="fa-solid fa-moon"></i>
 </button>
@@ -99,10 +105,9 @@ new Chart(ctx, {
     data: {
         labels: ['Skills Found', 'Missing Skills'],
         datasets: [{
-            label: 'Skill Count',
+            label: 'Count',
             data: [{{ skills|length }}, {{ missing_skills|length }}],
-            backgroundColor: ['#4caf50', '#e53935'],
-            borderRadius: 8
+            backgroundColor: ['#4caf50', '#f44336']
         }]
     },
     options: {
