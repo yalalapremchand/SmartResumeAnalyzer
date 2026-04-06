@@ -1,85 +1,62 @@
-/* Page background */
-/* Page background - LIGHT ORANGE */
-body {
-    margin: 0;
-    font-family: "Segoe UI", sans-serif;
-    min-height: 100vh;
-
-    background: linear-gradient(
-        135deg,
-        #ffddb8,   /* light orange */
-        #ffb347    /* soft orange */
-    );
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-/* Center page */
-.page {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 50px 20px;
-}
-
-/* Main card */
-.card {
-  background: #ffffff;
-  width: 100%;
-  max-width: 720px;
-  border-radius: 18px;
-  padding: 30px 35px;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
-}
+/* RESET */
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
   font-family: "Segoe UI", sans-serif;
 }
 
+/* BODY BACKGROUND */
 body {
-    margin: 0;
-    font-family: "Segoe UI", sans-serif;
-    min-height: 100vh;
-
-    background: linear-gradient(
-        135deg,
-        #ffddb8,   /* light orange */
-        #ffb347    /* soft orange */
-    );
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.badges {
+  min-height: 100vh;
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 10px;
+  justify-content: center;
+  align-items: center;
+
+  background: linear-gradient(135deg, #ffddb8, #ffb347);
 }
 
-.badge {
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 600;
+/* DARK MODE */
+body.dark {
+  background: linear-gradient(135deg, #2b1b00, #1a1200);
+  color: #ffffff;
 }
 
+/* MAIN CONTAINER */
+.container {
+  width: 90%;
+  max-width: 800px;
+  padding: 30px;
+  border-radius: 18px;
+
+  background: linear-gradient(135deg, #fff7cc, #ffec99);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  border: 2px solid rgba(255, 165, 0, 0.4);
+}
+
+/* HEADINGS */
 h1 {
+  text-align: center;
+  color: #4a148c;
   margin-bottom: 20px;
 }
 
+h2, h3 {
+  margin-bottom: 12px;
+  color: #333;
+}
+
+/* FORM */
 form {
   margin-bottom: 25px;
+  text-align: center;
 }
 
 input[type="file"] {
   margin: 10px 0;
 }
 
+/* BUTTON */
 button {
   background: #4caf50;
   border: none;
@@ -96,6 +73,7 @@ button:hover {
   transform: scale(1.05);
 }
 
+/* CARD */
 .card {
   background: white;
   padding: 25px;
@@ -104,30 +82,7 @@ button:hover {
   margin-top: 20px;
 }
 
-body.dark {
-    background: linear-gradient(
-        135deg,
-        #2b1b00,
-        #1a1200
-    );
-    color: #ffffff;
-}
-
-body.dark .container {
-    background: linear-gradient(
-        135deg,
-        #2c2c2c,
-        #1e1e1e
-    );
-}
-
-
-
-
-@keyframes grow {
-  from { width: 0; }
-}
-
+/* SKILLS */
 .skills {
   margin: 10px 0;
 }
@@ -150,6 +105,28 @@ body.dark .container {
   color: white;
 }
 
+/* PROGRESS BAR */
+.progress {
+  width: 100%;
+  height: 22px;
+  background: #e0e0e0;
+  border-radius: 30px;
+  overflow: hidden;
+  margin: 15px 0 25px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #00c853, #b2ff59);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #1b5e20;
+  transition: width 1s ease-in-out;
+}
+
+/* HISTORY LINK */
 .history-link {
   display: inline-block;
   margin-top: 15px;
@@ -157,14 +134,7 @@ body.dark .container {
   color: #2196f3;
 }
 
-.fade-in {
-  animation: fade 0.6s ease-in;
-}
-
-@keyframes fade {
-  from { opacity: 0; transform: translateY(10px); }
-}
-
+/* THEME BUTTON */
 .theme-toggle {
   position: fixed;
   bottom: 20px;
@@ -174,115 +144,47 @@ body.dark .container {
   border-radius: 50%;
   width: 50px;
   height: 50px;
+  cursor: pointer;
 }
+
+/* CANVAS */
 canvas {
   margin-top: 15px;
 }
-/* Center card - YELLOW */
-.container {
-    background: linear-gradient(
-        135deg,
-        #fff7cc,   /* soft yellow */
-        #ffec99    /* light golden yellow */
-    );
 
-    width: 90%;
-    max-width: 800px;
-    padding: 30px;
-    border-radius: 18px;
-
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-}
-h1 {
-  text-align: center;
-  color: #4a148c;
-  margin-bottom: 20px;
+/* ANIMATION */
+.fade-in {
+  animation: fade 0.6s ease-in;
 }
 
-h2, h3 {
-  color: #2c2c54;
-}
-.badge {
-  display: inline-block;
-  padding: 8px 14px;
-  margin: 6px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
+@keyframes fade {
+  from { opacity: 0; transform: translateY(10px); }
 }
 
-.badge.success {
-  background: linear-gradient(135deg, #43cea2, #185a9d);
-  color: white;
-}
-
-.badge.danger {
-  background: linear-gradient(135deg, #ff416c, #ff4b2b);
-  color: white;
-}
-/* Progress container */
-.progress {
-  width: 100%;
-  height: 22px;              /* 🔥 THIS fixes thin bar */
-  background: #e0e0e0;
-  border-radius: 30px;
-  overflow: hidden;
-  margin: 15px 0 25px;
-}
-
-/* Progress fill */
-.progress-bar {
-  height: 100%;              /* 🔥 Fills full container height */
-  background: linear-gradient(90deg, #00c853, #b2ff59);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  color: #1b5e20;
-  transition: width 1s ease-in-out;
-}
-section {
-  margin-bottom: 30px;
-}
-
-h2, h3 {
-  margin-bottom: 12px;
-  color: #333;
-}
-.container {
-    border: 2px solid rgba(255, 165, 0, 0.4);
-}
-<div class="person-section">
-    <img src="static/images/person-laptop.png" alt="Person working on laptop">
-    <h2>Hello, I’m Prem Chand 👋</h2>
-    <p>Aspiring Developer | Smart Resume Analyzer Creator</p>
-</div>
+/* PERSON SECTION */
 .person-section {
-    text-align: center;
-    padding: 40px;
+  text-align: center;
+  padding: 40px;
+  background-color: #FFD966;
+  border-radius: 20px;
+  width: 80%;
+  margin: 20px auto;
 }
 
 .person-section img {
-    width: 280px;
-    max-width: 100%;
-    border-radius: 20px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    margin-bottom: 20px;
+  width: 280px;
+  max-width: 100%;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  margin-bottom: 20px;
 }
 
 .person-section h2 {
-    font-size: 26px;
-    margin-bottom: 10px;
+  font-size: 26px;
+  margin-bottom: 10px;
 }
 
 .person-section p {
-    font-size: 16px;
-    color: #555;
-}
-.person-section {
-    background-color: #FFD966; /* yellow center */
-    padding: 40px;
-    border-radius: 20px;
-    width: 80%;
-    margin: auto;
+  font-size: 16px;
+  color: #555;
 }

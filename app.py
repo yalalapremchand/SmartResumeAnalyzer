@@ -6,8 +6,10 @@ from PyPDF2.errors import PdfReadError
 
 # ------------------ APP SETUP ------------------
 app = Flask(__name__)
+
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///resumes.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
 db = SQLAlchemy(app)
 
 # ------------------ DATABASE MODEL ------------------
@@ -18,6 +20,10 @@ class Resume(db.Model):
     role = db.Column(db.String(100))
     skills_found = db.Column(db.Text)
     missing_skills = db.Column(db.Text)
+
+# ------------------ CREATE DB (IMPORTANT FIX) ------------------
+with app.app_context():
+    db.create_all()
 
 # ------------------ HELPERS ------------------
 def has_skill(skill, text):
@@ -54,18 +60,28 @@ SKILL_WEIGHTS = {
 def home():
     skills = []
     missing_skills = []
-    score = 0
+    score = None
     role = "General"
 
     if request.method == "POST":
         file = request.files.get("resume")
 
+        # -------- FILE VALIDATION --------
         if not file or file.filename == "":
             return render_template(
                 "index.html",
                 skills=[],
                 score=0,
                 role="No File",
+                missing_skills=[]
+            )
+
+        if not file.filename.lower().endswith(".pdf"):
+            return render_template(
+                "index.html",
+                skills=[],
+                score=0,
+                role="Upload PDF only",
                 missing_skills=[]
             )
 
@@ -100,24 +116,22 @@ def home():
         skills_set = {s.lower() for s in skills}
 
         # -------- SCORE CALCULATION --------
-        score = 0
-        for s in skills_set:
-            score += SKILL_WEIGHTS.get(s, 5)
+        score = sum(SKILL_WEIGHTS.get(s, 5) for s in skills_set)
         score = min(score, 100)
 
-        # -------- ROLE DECISION --------
-        if {"python", "django", "sql"}.issubset(skills_set):
+        # -------- ROLE DECISION (FIXED ORDER) --------
+        if {"python", "javascript", "react", "sql"}.issubset(skills_set):
+            role = "Full Stack Developer"
+        elif {"python", "django", "sql"}.issubset(skills_set):
             role = "Backend Developer"
         elif {"react", "javascript", "html", "css"}.issubset(skills_set):
             role = "Frontend Developer"
         elif {"python", "sql"}.issubset(skills_set):
             role = "Data Analyst"
-        elif {"python", "javascript", "react", "sql"}.issubset(skills_set):
-            role = "Full Stack Developer"
         else:
             role = "General"
 
-        # -------- MISSING SKILLS (SAFE & OPTIONAL) --------
+        # -------- MISSING SKILLS --------
         if role in ROLE_SKILL_MAP:
             required = ROLE_SKILL_MAP[role]
             missing_skills = sorted([
@@ -129,16 +143,20 @@ def home():
             missing_skills = []
 
         # -------- SAVE TO DATABASE --------
-        resume_entry = Resume(
-            filename=file.filename,
-            score=score,
-            role=role,
-            skills_found=", ".join(skills),
-            missing_skills=", ".join(missing_skills)
-        )
+        try:
+            resume_entry = Resume(
+                filename=file.filename,
+                score=score,
+                role=role,
+                skills_found=", ".join(skills),
+                missing_skills=", ".join(missing_skills)
+            )
 
-        db.session.add(resume_entry)
-        db.session.commit()
+            db.session.add(resume_entry)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print("DB Error:", e)
 
     return render_template(
         "index.html",

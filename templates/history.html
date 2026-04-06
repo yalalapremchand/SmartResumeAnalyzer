@@ -1,37 +1,95 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Resume History</title>
+
+    <!-- CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
+
 <body>
 
-<h1>📜 Resume History</h1>
+<div class="container">
 
-<table border="1" cellpadding="10">
-    <tr>
-        <th>ID</th>
-        <th>Filename</th>
-        <th>Score</th>
-        <th>Role</th>
-        <th>Skills Found</th>
-        <th>Missing Skills</th>
-    </tr>
+    <!-- HEADER -->
+    <h1><i class="fa-solid fa-clock-rotate-left"></i> Resume History</h1>
 
-    {% for r in resumes %}
-    <tr>
-        <td>{{ r.id }}</td>
-        <td>{{ r.filename }}</td>
-        <td>{{ r.score }}%</td>
-        <td>{{ r.role }}</td>
-        <td>{{ r.skills_found }}</td>
-        <td>{{ r.missing_skills }}</td>
-    </tr>
-    {% endfor %}
-</table>
+    {% if resumes %}
 
-<br>
-<a href="/">⬅ Back to Analyzer</a>
+    <!-- TABLE CARD -->
+    <div class="card">
+
+        <div class="table-wrapper">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Filename</th>
+                        <th>Score</th>
+                        <th>Role</th>
+                        <th>Skills Found</th>
+                        <th>Missing Skills</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for r in resumes %}
+                    <tr>
+                        <td>{{ r.id }}</td>
+                        <td>{{ r.filename }}</td>
+                        <td>
+                            <span class="tag success">{{ r.score }}%</span>
+                        </td>
+                        <td>{{ r.role }}</td>
+                        <td>
+                            {% if r.skills_found %}
+                                {% for s in r.skills_found.split(",") %}
+                                    <span class="tag success">{{ s.strip() }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="tag danger">None</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if r.missing_skills %}
+                                {% for ms in r.missing_skills.split(",") %}
+                                    <span class="tag danger">{{ ms.strip() }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="tag success">None 🎉</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+        </div>
+
+    </div>
+
+    {% else %}
+
+    <!-- EMPTY STATE -->
+    <div class="card">
+        <p style="text-align:center;">No resumes analyzed yet 📄</p>
+    </div>
+
+    {% endif %}
+
+    <!-- BACK BUTTON -->
+    <div style="text-align:center; margin-top:20px;">
+        <a href="/" class="history-link">
+            <i class="fa-solid fa-arrow-left"></i> Back to Analyzer
+        </a>
+    </div>
+
+</div>
 
 </body>
 </html>

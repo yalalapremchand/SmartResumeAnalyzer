@@ -22,6 +22,13 @@
     <!-- HEADER -->
     <h1><i class="fa-solid fa-file-lines"></i> Smart Resume Analyzer</h1>
 
+    <!-- 👤 PERSON SECTION (NEW) -->
+    <div class="person-section">
+        <img src="{{ url_for('static', filename='images/person-laptop.png') }}" alt="Person working">
+        <h2>Hello, I’m Prem Chand 👋</h2>
+        <p>Aspiring Developer | Smart Resume Analyzer Creator</p>
+    </div>
+
     <!-- UPLOAD FORM -->
     <form method="POST" enctype="multipart/form-data" class="upload-box">
         <input type="file" name="resume" required>
@@ -30,7 +37,7 @@
         </button>
     </form>
 
-    {% if score %}
+    {% if score is not none %}
 
     <!-- RESULT CARD -->
     <div class="card">
@@ -46,15 +53,19 @@
         <!-- ROLE -->
         <p class="role">
             <i class="fa-solid fa-user-tie"></i>
-            Best Fit Role: <b>{{ role }}</b>
+            Best Fit Role: <b>{{ role or "Not detected" }}</b>
         </p>
 
         <!-- SKILLS FOUND -->
         <h3><i class="fa-solid fa-check"></i> Skills Found</h3>
         <div class="skills">
-            {% for s in skills %}
-                <span class="tag success">{{ s }}</span>
-            {% endfor %}
+            {% if skills %}
+                {% for s in skills %}
+                    <span class="tag success">{{ s }}</span>
+                {% endfor %}
+            {% else %}
+                <span class="tag danger">No skills detected</span>
+            {% endif %}
         </div>
 
         <!-- MISSING SKILLS -->
@@ -96,32 +107,38 @@ function toggleTheme() {
 }
 </script>
 
-{% if skills %}
+{% if skills is not none and missing_skills is not none %}
 <script>
-const ctx = document.getElementById('skillsChart').getContext('2d');
+document.addEventListener("DOMContentLoaded", function () {
 
-new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: ['Skills Found', 'Missing Skills'],
-        datasets: [{
-            label: 'Count',
-            data: [{{ skills|length }}, {{ missing_skills|length }}],
-            backgroundColor: ['#4caf50', '#f44336']
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: { display: false }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: { stepSize: 1 }
+    const ctx = document.getElementById('skillsChart');
+
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Skills Found', 'Missing Skills'],
+                datasets: [{
+                    label: 'Count',
+                    data: [{{ skills|length if skills else 0 }}, {{ missing_skills|length if missing_skills else 0 }}],
+                    backgroundColor: ['#4caf50', '#f44336']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                }
             }
-        }
+        });
     }
+
 });
 </script>
 {% endif %}
