@@ -188,3 +188,27 @@ canvas {
   font-size: 16px;
   color: #555;
 }
+.brand-tag {
+    position: fixed;
+    bottom: 15px;
+    right: 20px;
+    font-size: 13px;
+    color: #555;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 8px 12px;
+    border-radius: 20px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    z-index: 999;
+}
+
+.brand-tag span {
+    font-weight: bold;
+    color: #6a5acd;
+}
+
+.brand-tag:hover {
+    transform: scale(1.05);
+    color: #000;
+}

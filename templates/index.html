@@ -1,147 +1,1129 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Smart Resume Analyzer</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ResumeIQ — AI-Powered Resume Analyzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* ============================================================
+       CSS VARIABLES & RESET
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-
-<body>
-
-<div class="container">
-
-    <!-- HEADER -->
-    <h1><i class="fa-solid fa-file-lines"></i> Smart Resume Analyzer</h1>
-
-    <!-- 👤 PERSON SECTION (NEW) -->
-    <div class="person-section">
-        <img src="{{ url_for('static', filename='images/person-laptop.png') }}" alt="Person working">
-        <h2>Hello, I’m Prem Chand 👋</h2>
-        <p>Aspiring Developer | Smart Resume Analyzer Creator</p>
-    </div>
-
-    <!-- UPLOAD FORM -->
-    <form method="POST" enctype="multipart/form-data" class="upload-box">
-        <input type="file" name="resume" required>
-        <button type="submit">
-            <i class="fa-solid fa-magnifying-glass"></i> Analyze Resume
-        </button>
-    </form>
-
-    {% if score is not none %}
-
-    <!-- RESULT CARD -->
-    <div class="card">
-
-        <!-- SCORE -->
-        <h2><i class="fa-solid fa-chart-line"></i> Resume Score</h2>
-        <div class="progress">
-            <div class="progress-bar" style="width: {{ score }}%;">
-                {{ score }}%
-            </div>
-        </div>
-
-        <!-- ROLE -->
-        <p class="role">
-            <i class="fa-solid fa-user-tie"></i>
-            Best Fit Role: <b>{{ role or "Not detected" }}</b>
-        </p>
-
-        <!-- SKILLS FOUND -->
-        <h3><i class="fa-solid fa-check"></i> Skills Found</h3>
-        <div class="skills">
-            {% if skills %}
-                {% for s in skills %}
-                    <span class="tag success">{{ s }}</span>
-                {% endfor %}
-            {% else %}
-                <span class="tag danger">No skills detected</span>
-            {% endif %}
-        </div>
-
-        <!-- MISSING SKILLS -->
-        <h3><i class="fa-solid fa-triangle-exclamation"></i> Missing Skills</h3>
-        <div class="skills">
-            {% if missing_skills %}
-                {% for ms in missing_skills %}
-                    <span class="tag danger">{{ ms }}</span>
-                {% endfor %}
-            {% else %}
-                <span class="tag success">No missing skills 🎉</span>
-            {% endif %}
-        </div>
-
-        <!-- CHART -->
-        <h3><i class="fa-solid fa-chart-column"></i> Skill Overview</h3>
-        <canvas id="skillsChart" height="120"></canvas>
-
-        <!-- HISTORY LINK -->
-        <a href="/history" class="history-link">
-            <i class="fa-solid fa-clock-rotate-left"></i> View Resume History
-        </a>
-
-    </div>
-
-    {% endif %}
-
-</div>
-
-<!-- THEME TOGGLE -->
-<button class="theme-toggle" onclick="toggleTheme()">
-    <i class="fa-solid fa-moon"></i>
-</button>
-
-<!-- JS -->
-<script>
-function toggleTheme() {
-    document.body.classList.toggle("dark");
-}
-</script>
-
-{% if skills is not none and missing_skills is not none %}
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-
-    const ctx = document.getElementById('skillsChart');
-
-    if (ctx) {
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Skills Found', 'Missing Skills'],
-                datasets: [{
-                    label: 'Count',
-                    data: [{{ skills|length if skills else 0 }}, {{ missing_skills|length if missing_skills else 0 }}],
-                    backgroundColor: ['#4caf50', '#f44336']
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { stepSize: 1 }
-                    }
-                }
-            }
-        });
+    :root {
+      --bg:          #0b0c14;
+      --surface:     rgba(255,255,255,0.045);
+      --border:      rgba(255,255,255,0.10);
+      --border-glow: rgba(255,165,80,0.35);
+      --orange:      #ff8c42;
+      --orange-soft: #ffb07a;
+      --teal:        #3ef0d8;
+      --purple:      #9f6ef5;
+      --white:       #f5f5f5;
+      --muted:       rgba(245,245,245,0.45);
+      --card-radius: 24px;
+      --transition:  0.3s cubic-bezier(0.4,0,0.2,1);
     }
 
-});
-</script>
-{% endif %}
+    html { scroll-behavior: smooth; }
 
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--white);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ============================================================
+       CANVAS BACKGROUND
+    ============================================================ */
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ============================================================
+       LAYOUT WRAPPER
+    ============================================================ */
+    .page-wrapper {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px 80px;
+    }
+
+    /* ============================================================
+       NAV BAR
+    ============================================================ */
+    nav {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 0 40px;
+      opacity: 0;
+      transform: translateY(-20px);
+      animation: fadeSlideDown 0.7s 0.1s forwards;
+    }
+
+    .nav-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.35rem;
+      letter-spacing: -0.5px;
+    }
+    .nav-logo span { color: var(--orange); }
+
+    .nav-badge {
+      font-size: 0.7rem;
+      background: linear-gradient(135deg, var(--orange), var(--purple));
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    /* ============================================================
+       HERO SECTION
+    ============================================================ */
+    .hero {
+      text-align: center;
+      max-width: 680px;
+      margin-bottom: 48px;
+      opacity: 0;
+      transform: translateY(30px);
+      animation: fadeSlideUp 0.8s 0.25s forwards;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--teal);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 20px;
+      padding: 6px 16px;
+      border: 1px solid rgba(62,240,216,0.25);
+      border-radius: 30px;
+      background: rgba(62,240,216,0.06);
+    }
+    .hero-eyebrow i { font-size: 0.7rem; }
+
+    .hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      line-height: 1.12;
+      letter-spacing: -1px;
+      margin-bottom: 18px;
+    }
+    .hero h1 .accent {
+      background: linear-gradient(90deg, var(--orange), var(--orange-soft) 50%, var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 1.05rem;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* ============================================================
+       STAT PILLS
+    ============================================================ */
+    .stat-pills {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 28px;
+      opacity: 0;
+      animation: fadeIn 0.7s 0.6s forwards;
+    }
+    .pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      padding: 6px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+    }
+    .pill i { color: var(--orange); font-size: 0.75rem; }
+
+    /* ============================================================
+       MAIN CARD
+    ============================================================ */
+    .main-card {
+      width: 100%;
+      max-width: 700px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--card-radius);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 40px;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.04),
+                  0 32px 80px rgba(0,0,0,0.5),
+                  0 0 60px rgba(255,140,66,0.06);
+      opacity: 0;
+      transform: translateY(40px);
+      animation: fadeSlideUp 0.9s 0.45s forwards;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .main-card:hover {
+      border-color: var(--border-glow);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.06),
+                  0 32px 80px rgba(0,0,0,0.5),
+                  0 0 80px rgba(255,140,66,0.12);
+    }
+
+    /* ============================================================
+       UPLOAD ZONE
+    ============================================================ */
+    .upload-zone {
+      position: relative;
+      border: 2px dashed var(--border);
+      border-radius: 16px;
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition);
+      background: rgba(255,255,255,0.02);
+      overflow: hidden;
+    }
+    .upload-zone::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, rgba(255,140,66,0.06) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--orange);
+      background: rgba(255,140,66,0.04);
+    }
+    .upload-zone:hover::before, .upload-zone.drag-over::before { opacity: 1; }
+
+    .upload-icon-wrap {
+      width: 72px;
+      height: 72px;
+      background: linear-gradient(135deg, rgba(255,140,66,0.15), rgba(159,110,245,0.15));
+      border: 1px solid rgba(255,140,66,0.2);
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 1.7rem;
+      color: var(--orange);
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+    .upload-zone:hover .upload-icon-wrap {
+      transform: translateY(-4px) scale(1.05);
+      box-shadow: 0 12px 32px rgba(255,140,66,0.2);
+    }
+
+    .upload-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .upload-sub {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+
+    .upload-btn-fake {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 22px;
+      font-size: 0.83rem;
+      font-weight: 600;
+      color: var(--orange);
+      border: 1px solid rgba(255,140,66,0.35);
+      border-radius: 30px;
+      background: rgba(255,140,66,0.08);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .upload-btn-fake:hover {
+      background: rgba(255,140,66,0.16);
+      border-color: var(--orange);
+    }
+
+    #file-input { display: none; }
+
+    /* ============================================================
+       FILE PREVIEW
+    ============================================================ */
+    .file-preview {
+      display: none;
+      align-items: center;
+      gap: 14px;
+      margin-top: 20px;
+      padding: 14px 18px;
+      background: rgba(62,240,216,0.06);
+      border: 1px solid rgba(62,240,216,0.2);
+      border-radius: 12px;
+      animation: fadeSlideUp 0.4s forwards;
+    }
+    .file-preview.visible { display: flex; }
+
+    .file-icon {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, #ff4e4e, #ff8c42);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; flex-shrink: 0; color: #fff;
+    }
+    .file-info { flex: 1; min-width: 0; }
+    .file-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .file-size { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+    .file-remove {
+      background: none; border: none; color: var(--muted);
+      cursor: pointer; font-size: 1rem; padding: 4px;
+      transition: color var(--transition);
+    }
+    .file-remove:hover { color: #ff6b6b; }
+
+    /* ============================================================
+       ANALYZE BUTTON
+    ============================================================ */
+    .analyze-btn {
+      width: 100%;
+      margin-top: 24px;
+      padding: 16px;
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--orange) 0%, #e05c00 100%);
+      color: #fff;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform var(--transition), box-shadow var(--transition), opacity var(--transition);
+      box-shadow: 0 8px 28px rgba(255,140,66,0.3);
+    }
+    .analyze-btn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+      transition: left 0.5s ease;
+    }
+    .analyze-btn:hover:not(:disabled)::before { left: 100%; }
+    .analyze-btn:hover:not(:disabled) {
+      transform: translateY(-2px) scale(1.01);
+      box-shadow: 0 14px 40px rgba(255,140,66,0.45);
+    }
+    .analyze-btn:active:not(:disabled) { transform: translateY(0) scale(0.99); }
+    .analyze-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+    .btn-inner { display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .btn-spinner {
+      display: none;
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    /* ============================================================
+       PROGRESS BAR
+    ============================================================ */
+    .progress-wrap {
+      display: none;
+      margin-top: 18px;
+    }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .progress-track {
+      height: 6px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--orange), var(--purple));
+      border-radius: 6px;
+      transition: width 0.4s ease;
+      position: relative;
+    }
+    .progress-bar::after {
+      content: '';
+      position: absolute;
+      top: 0; right: 0;
+      width: 20px; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4));
+      animation: shimmer 1s infinite;
+    }
+
+    /* ============================================================
+       TOAST NOTIFICATIONS
+    ============================================================ */
+    .toast-container {
+      position: fixed;
+      bottom: 32px;
+      right: 24px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .toast {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      border-radius: 14px;
+      font-size: 0.87rem;
+      font-weight: 500;
+      backdrop-filter: blur(16px);
+      border: 1px solid transparent;
+      max-width: 340px;
+      transform: translateX(120%);
+      transition: transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    .toast.visible { transform: translateX(0); }
+    .toast.success {
+      background: rgba(62,240,150,0.12);
+      border-color: rgba(62,240,150,0.25);
+      color: #3ef096;
+    }
+    .toast.error {
+      background: rgba(255,100,100,0.12);
+      border-color: rgba(255,100,100,0.25);
+      color: #ff7878;
+    }
+    .toast i { font-size: 1rem; flex-shrink: 0; }
+
+    /* ============================================================
+       RESULTS SECTION
+    ============================================================ */
+    #results-section {
+      width: 100%;
+      max-width: 700px;
+      display: none;
+      margin-top: 32px;
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    #results-section.visible {
+      display: block;
+      animation: fadeSlideUp 0.7s forwards;
+    }
+
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .results-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .results-title i { color: var(--teal); }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .result-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px 20px;
+      backdrop-filter: blur(16px);
+      transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+      opacity: 0;
+      animation: fadeSlideUp 0.5s forwards;
+    }
+    .result-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-glow);
+      box-shadow: 0 12px 40px rgba(255,140,66,0.1);
+    }
+    .result-card:nth-child(1) { animation-delay: 0.05s; }
+    .result-card:nth-child(2) { animation-delay: 0.12s; }
+    .result-card:nth-child(3) { animation-delay: 0.19s; }
+
+    .rc-icon {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      margin-bottom: 14px;
+    }
+    .rc-icon.orange { background: rgba(255,140,66,0.15); color: var(--orange); }
+    .rc-icon.teal   { background: rgba(62,240,216,0.12); color: var(--teal);   }
+    .rc-icon.purple { background: rgba(159,110,245,0.15); color: var(--purple);}
+
+    .rc-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 6px; }
+    .rc-value { font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800; line-height: 1; }
+    .rc-sub   { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+    /* Score ring */
+    .score-ring-wrap { display: flex; align-items: center; gap: 14px; }
+    .score-ring {
+      position: relative;
+      width: 56px; height: 56px; flex-shrink: 0;
+    }
+    .score-ring svg { transform: rotate(-90deg); }
+    .ring-bg { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 5; }
+    .ring-fg {
+      fill: none; stroke: var(--orange); stroke-width: 5;
+      stroke-linecap: round;
+      stroke-dasharray: 138;
+      stroke-dashoffset: 138;
+      transition: stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1);
+    }
+    .ring-val {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif; font-size: 0.85rem; font-weight: 800;
+    }
+
+    /* Suggestions card */
+    .suggestions-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(16px);
+      margin-bottom: 16px;
+      opacity: 0;
+      animation: fadeSlideUp 0.5s 0.25s forwards;
+    }
+    .sc-header {
+      display: flex; align-items: center; gap: 10px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 0.95rem;
+      margin-bottom: 16px;
+    }
+    .sc-header i { color: var(--orange); }
+
+    .suggestion-item {
+      display: flex; gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 0.87rem;
+      line-height: 1.5;
+      color: rgba(245,245,245,0.8);
+      opacity: 0;
+      animation: fadeSlideUp 0.4s forwards;
+    }
+    .suggestion-item:last-child { border-bottom: none; }
+    .suggestion-item .si-dot {
+      width: 6px; height: 6px;
+      background: var(--orange);
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 7px;
+    }
+
+    /* Keywords card */
+    .keywords-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(16px);
+      opacity: 0;
+      animation: fadeSlideUp 0.5s 0.35s forwards;
+    }
+    .kw-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .kw-tag {
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border: 1px solid;
+      transition: transform var(--transition);
+    }
+    .kw-tag:hover { transform: scale(1.06); }
+    .kw-tag.t1 { background: rgba(255,140,66,0.1); border-color: rgba(255,140,66,0.3); color: var(--orange-soft); }
+    .kw-tag.t2 { background: rgba(62,240,216,0.08); border-color: rgba(62,240,216,0.2); color: var(--teal); }
+    .kw-tag.t3 { background: rgba(159,110,245,0.1); border-color: rgba(159,110,245,0.3); color: var(--purple); }
+
+    /* ============================================================
+       FOOTER
+    ============================================================ */
+    footer {
+      margin-top: 60px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-align: center;
+      opacity: 0;
+      animation: fadeIn 1s 1s forwards;
+    }
+    footer span { color: var(--orange); }
+
+    /* ============================================================
+       KEYFRAMES
+    ============================================================ */
+    @keyframes fadeSlideUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeSlideDown {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes shimmer {
+      0%   { opacity: 0; }
+      50%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* ============================================================
+       RESPONSIVE
+    ============================================================ */
+    @media (max-width: 600px) {
+      .main-card { padding: 24px 18px; }
+      .results-grid { grid-template-columns: 1fr 1fr; }
+      .hero h1 { font-size: 1.8rem; }
+      .toast-container { right: 12px; bottom: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Floating particles canvas -->
+  <canvas id="bg-canvas"></canvas>
+
+  <div class="page-wrapper">
+
+    <!-- NAV -->
+    <nav>
+      <div class="nav-logo">Resume<span>IQ</span></div>
+      <div class="nav-badge"><i class="fa-solid fa-bolt"></i>&nbsp; AI Powered</div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-eyebrow">
+        <i class="fa-solid fa-circle-dot"></i>
+        Smart Career Tool
+      </div>
+      <h1>Analyze your resume with<br><span class="accent">AI-powered insights</span></h1>
+      <p>Upload your resume and instantly receive a score, skill gap analysis, keyword matches, and tailored suggestions to land your next role.</p>
+      <div class="stat-pills">
+        <div class="pill"><i class="fa-solid fa-check"></i> ATS-Friendly Check</div>
+        <div class="pill"><i class="fa-solid fa-check"></i> Keyword Matching</div>
+        <div class="pill"><i class="fa-solid fa-check"></i> Instant Score</div>
+      </div>
+    </section>
+
+    <!-- MAIN CARD (Flask form) -->
+    <div class="main-card">
+      <form id="resume-form" action="/analyze" method="POST" enctype="multipart/form-data">
+
+        <!-- DRAG & DROP ZONE -->
+        <div class="upload-zone" id="upload-zone">
+          <div class="upload-icon-wrap">
+            <i class="fa-solid fa-file-arrow-up"></i>
+          </div>
+          <p class="upload-title">Drag & drop your resume here</p>
+          <p class="upload-sub">Supports PDF files up to 5MB</p>
+          <label for="file-input" class="upload-btn-fake">
+            <i class="fa-solid fa-folder-open"></i> Browse File
+          </label>
+          <input type="file" id="file-input" name="resume" accept=".pdf">
+        </div>
+
+        <!-- FILE PREVIEW -->
+        <div class="file-preview" id="file-preview">
+          <div class="file-icon"><i class="fa-solid fa-file-pdf"></i></div>
+          <div class="file-info">
+            <div class="file-name" id="file-name-display">resume.pdf</div>
+            <div class="file-size" id="file-size-display">0 KB</div>
+          </div>
+          <button type="button" class="file-remove" id="remove-file" title="Remove">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <!-- ANALYZE BUTTON -->
+        <button type="submit" class="analyze-btn" id="analyze-btn">
+          <span class="btn-inner">
+            <i class="fa-solid fa-magnifying-glass-chart" id="btn-icon"></i>
+            <span id="btn-text">Analyze Resume</span>
+            <span class="btn-spinner" id="btn-spinner"></span>
+          </span>
+        </button>
+
+        <!-- PROGRESS BAR -->
+        <div class="progress-wrap" id="progress-wrap">
+          <div class="progress-label">
+            <span id="progress-status">Initializing…</span>
+            <span id="progress-pct">0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-bar" id="progress-bar"></div>
+          </div>
+        </div>
+
+      </form>
+    </div><!-- /main-card -->
+
+    <!-- RESULTS SECTION -->
+    <!--
+      In Flask, populate this section using Jinja2 after form submission.
+      The JS below also demo-populates it on the frontend for preview.
+      Replace variables with your actual backend data.
+    -->
+    <section id="results-section">
+
+      <div class="results-header">
+        <h2 class="results-title">
+          <i class="fa-solid fa-chart-pie"></i> Analysis Results
+        </h2>
+      </div>
+
+      <!-- STAT CARDS -->
+      <div class="results-grid">
+
+        <!-- Score Card -->
+        <div class="result-card" id="card-score">
+          <div class="rc-label">Overall Score</div>
+          <div class="score-ring-wrap" style="margin-top:6px;">
+            <div class="score-ring">
+              <svg viewBox="0 0 50 50" width="56" height="56">
+                <circle class="ring-bg" cx="25" cy="25" r="22"/>
+                <circle class="ring-fg" id="score-ring-fg" cx="25" cy="25" r="22"/>
+              </svg>
+              <div class="ring-val" id="score-ring-val">—</div>
+            </div>
+            <div>
+              <div class="rc-value" id="score-display">—</div>
+              <div class="rc-sub" id="score-label-display">out of 100</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Skills Match -->
+        <div class="result-card">
+          <div class="rc-icon teal"><i class="fa-solid fa-bullseye"></i></div>
+          <div class="rc-label">Skill Match</div>
+          <div class="rc-value" id="skill-match-display">—</div>
+          <div class="rc-sub" id="skill-match-sub">keywords found</div>
+        </div>
+
+        <!-- Missing Skills -->
+        <div class="result-card">
+          <div class="rc-icon purple"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          <div class="rc-label">Gaps Found</div>
+          <div class="rc-value" id="gaps-display">—</div>
+          <div class="rc-sub">skills to add</div>
+        </div>
+
+      </div>
+
+      <!-- SUGGESTIONS -->
+      <div class="suggestions-card">
+        <div class="sc-header">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> AI Suggestions
+        </div>
+        <div id="suggestions-list">
+          <!-- populated by JS or Jinja -->
+        </div>
+      </div>
+
+      <!-- KEYWORDS -->
+      <div class="keywords-card">
+        <div class="sc-header">
+          <i class="fa-solid fa-tags"></i> Detected Keywords
+        </div>
+        <div class="kw-tags" id="keywords-list">
+          <!-- populated by JS or Jinja -->
+        </div>
+      </div>
+
+    </section><!-- /results-section -->
+
+    <footer>
+      Built with <span>♥</span> using Flask &amp; AI &mdash; ResumeIQ &copy; 2025
+    </footer>
+
+  </div><!-- /page-wrapper -->
+
+  <!-- TOAST CONTAINER -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- ============================================================
+       JAVASCRIPT
+  ============================================================ -->
+  <script>
+    /* ----------------------------------------------------------
+       1. BACKGROUND CANVAS — floating orbs
+    ---------------------------------------------------------- */
+    (function () {
+      const canvas = document.getElementById('bg-canvas');
+      const ctx = canvas.getContext('2d');
+      let W, H, orbs = [];
+
+      function resize() {
+        W = canvas.width = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      const colors = ['rgba(255,140,66,', 'rgba(159,110,245,', 'rgba(62,240,216,'];
+
+      function createOrb() {
+        return {
+          x: Math.random() * W,
+          y: Math.random() * H,
+          r: 80 + Math.random() * 180,
+          dx: (Math.random() - 0.5) * 0.35,
+          dy: (Math.random() - 0.5) * 0.35,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: 0.06 + Math.random() * 0.08
+        };
+      }
+
+      for (let i = 0; i < 7; i++) orbs.push(createOrb());
+
+      function draw() {
+        ctx.clearRect(0, 0, W, H);
+        orbs.forEach(o => {
+          const g = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, o.r);
+          g.addColorStop(0, o.color + o.alpha + ')');
+          g.addColorStop(1, o.color + '0)');
+          ctx.beginPath();
+          ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
+          ctx.fillStyle = g;
+          ctx.fill();
+
+          o.x += o.dx; o.y += o.dy;
+          if (o.x < -o.r || o.x > W + o.r) o.dx *= -1;
+          if (o.y < -o.r || o.y > H + o.r) o.dy *= -1;
+        });
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+    /* ----------------------------------------------------------
+       2. FILE UPLOAD — drag & drop + browse
+    ---------------------------------------------------------- */
+    const zone        = document.getElementById('upload-zone');
+    const fileInput   = document.getElementById('file-input');
+    const filePreview = document.getElementById('file-preview');
+    const fileNameEl  = document.getElementById('file-name-display');
+    const fileSizeEl  = document.getElementById('file-size-display');
+    const removeBtn   = document.getElementById('remove-file');
+
+    function humanFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    function showFile(file) {
+      fileNameEl.textContent = file.name;
+      fileSizeEl.textContent = humanFileSize(file.size);
+      filePreview.classList.add('visible');
+    }
+
+    function clearFile() {
+      fileInput.value = '';
+      filePreview.classList.remove('visible');
+    }
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) showFile(fileInput.files[0]);
+    });
+
+    removeBtn.addEventListener('click', clearFile);
+
+    // Drag events
+    ['dragenter','dragover'].forEach(evt =>
+      zone.addEventListener(evt, e => { e.preventDefault(); zone.classList.add('drag-over'); })
+    );
+    ['dragleave','drop'].forEach(evt =>
+      zone.addEventListener(evt, e => { e.preventDefault(); zone.classList.remove('drag-over'); })
+    );
+    zone.addEventListener('drop', e => {
+      const file = e.dataTransfer.files[0];
+      if (file && file.type === 'application/pdf') {
+        // Create a DataTransfer to assign to input
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        fileInput.files = dt.files;
+        showFile(file);
+      } else {
+        showToast('Please drop a PDF file.', 'error');
+      }
+    });
+
+    /* ----------------------------------------------------------
+       3. TOAST NOTIFICATION SYSTEM
+    ---------------------------------------------------------- */
+    function showToast(msg, type = 'success', duration = 3500) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      const icon = type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation';
+      toast.innerHTML = `<i class="fa-solid ${icon}"></i><span>${msg}</span>`;
+      container.appendChild(toast);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => toast.classList.add('visible'));
+      });
+      setTimeout(() => {
+        toast.classList.remove('visible');
+        setTimeout(() => toast.remove(), 500);
+      }, duration);
+    }
+
+    /* ----------------------------------------------------------
+       4. PROGRESS BAR ANIMATION
+    ---------------------------------------------------------- */
+    function animateProgress(onComplete) {
+      const wrap  = document.getElementById('progress-wrap');
+      const bar   = document.getElementById('progress-bar');
+      const pct   = document.getElementById('progress-pct');
+      const status= document.getElementById('progress-status');
+      const steps = [
+        [15,  'Reading resume…'],
+        [38,  'Extracting skills…'],
+        [60,  'Matching keywords…'],
+        [82,  'Scoring content…'],
+        [95,  'Generating insights…'],
+        [100, 'Done!']
+      ];
+      wrap.style.display = 'block';
+      let i = 0;
+      function next() {
+        if (i >= steps.length) { if (onComplete) onComplete(); return; }
+        const [p, s] = steps[i++];
+        bar.style.width = p + '%';
+        pct.textContent = p + '%';
+        status.textContent = s;
+        setTimeout(next, p === 100 ? 400 : 500 + Math.random() * 300);
+      }
+      next();
+    }
+
+    /* ----------------------------------------------------------
+       5. FORM SUBMISSION
+       In production Flask, the form submits normally (full-page reload).
+       For AJAX, replace the submit handler with a fetch() call.
+       The demo below shows a front-end preview of results.
+    ---------------------------------------------------------- */
+    const form       = document.getElementById('resume-form');
+    const analyzeBtn = document.getElementById('analyze-btn');
+    const btnIcon    = document.getElementById('btn-icon');
+    const btnText    = document.getElementById('btn-text');
+    const btnSpinner = document.getElementById('btn-spinner');
+
+    form.addEventListener('submit', function (e) {
+      /* ----------- DEMO MODE (remove in production) ----------- */
+      e.preventDefault();
+
+      if (!fileInput.files[0]) {
+        showToast('Please select a PDF resume first.', 'error');
+        return;
+      }
+
+      // UI loading state
+      analyzeBtn.disabled = true;
+      btnIcon.style.display = 'none';
+      btnSpinner.style.display = 'inline-block';
+      btnText.textContent = 'Analyzing…';
+
+      animateProgress(() => {
+        // Hide spinner, restore button
+        analyzeBtn.disabled = false;
+        btnSpinner.style.display = 'none';
+        btnIcon.style.display = '';
+        btnText.textContent = 'Analyze Resume';
+        document.getElementById('progress-wrap').style.display = 'none';
+        document.getElementById('progress-bar').style.width = '0%';
+
+        showToast('Analysis complete! 🎉', 'success');
+        renderDemoResults(); // ← In production, call renderResults(flaskData) with Jinja data
+      });
+
+      /* ----------- PRODUCTION (uncomment & adapt) ----------- */
+      /*
+      const fd = new FormData(form);
+      fetch('/analyze', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+          analyzeBtn.disabled = false;
+          btnSpinner.style.display = 'none';
+          btnIcon.style.display = '';
+          btnText.textContent = 'Analyze Resume';
+          document.getElementById('progress-wrap').style.display = 'none';
+          showToast('Analysis complete!', 'success');
+          renderResults(data);
+        })
+        .catch(() => {
+          showToast('Something went wrong. Please try again.', 'error');
+          analyzeBtn.disabled = false;
+          btnSpinner.style.display = 'none';
+          btnIcon.style.display = '';
+          btnText.textContent = 'Analyze Resume';
+          document.getElementById('progress-wrap').style.display = 'none';
+        });
+      */
+    });
+
+    /* ----------------------------------------------------------
+       6. RENDER RESULTS
+    ---------------------------------------------------------- */
+    function renderResults(data) {
+      // Score
+      const score = data.score || 0;
+      document.getElementById('score-display').textContent = score;
+      document.getElementById('score-ring-val').textContent = score;
+      const circumference = 2 * Math.PI * 22; // ≈138
+      const offset = circumference - (score / 100) * circumference;
+      setTimeout(() => {
+        document.getElementById('score-ring-fg').style.strokeDashoffset = offset;
+      }, 300);
+
+      // Skill match
+      document.getElementById('skill-match-display').textContent = data.matched_keywords || 0;
+      document.getElementById('skill-match-sub').textContent = 'of ' + (data.total_keywords || 0) + ' keywords found';
+
+      // Gaps
+      document.getElementById('gaps-display').textContent = data.gaps || 0;
+
+      // Suggestions
+      const sugList = document.getElementById('suggestions-list');
+      sugList.innerHTML = '';
+      (data.suggestions || []).forEach((s, i) => {
+        const el = document.createElement('div');
+        el.className = 'suggestion-item';
+        el.style.animationDelay = (i * 0.08) + 's';
+        el.innerHTML = `<div class="si-dot"></div><span>${s}</span>`;
+        sugList.appendChild(el);
+      });
+
+      // Keywords
+      const kwList = document.getElementById('keywords-list');
+      kwList.innerHTML = '';
+      const tClasses = ['t1','t2','t3'];
+      (data.keywords || []).forEach((k, i) => {
+        const tag = document.createElement('span');
+        tag.className = 'kw-tag ' + tClasses[i % 3];
+        tag.textContent = k;
+        kwList.appendChild(tag);
+      });
+
+      // Show section
+      const section = document.getElementById('results-section');
+      section.style.display = 'block';
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => section.classList.add('visible'));
+      });
+      setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    }
+
+    // ---- DEMO DATA (remove in production) ----
+    function renderDemoResults() {
+      renderResults({
+        score: 78,
+        matched_keywords: 14,
+        total_keywords: 20,
+        gaps: 4,
+        suggestions: [
+          'Add measurable impact to your work experience (e.g., "Increased performance by 40%").',
+          'Include a professional summary at the top of your resume.',
+          'Tailor your skills section to match the job description more closely.',
+          'Add certifications or online courses to strengthen your profile.',
+          'Consider using stronger action verbs: "Architected", "Delivered", "Optimized".'
+        ],
+        keywords: [
+          'Python','Flask','REST API','SQL','Machine Learning','Docker','AWS',
+          'Agile','Git','Communication','Problem Solving','React','Node.js','CI/CD'
+        ]
+      });
+    }
+
+    /* ----------------------------------------------------------
+       7. JINJA2 TEMPLATE HOOK
+       If Flask renders the page with results already injected,
+       call renderResults with your Jinja variables like:
+    ---------------------------------------------------------- */
+    /*
+    {% if results %}
+    document.addEventListener('DOMContentLoaded', function() {
+      renderResults({{ results | tojson }});
+    });
+    {% endif %}
+    */
+  </script>
+<footer class="footer">
+    © <span id="year"></span> Prem Chand • Smart Resume Analyzer
+</footer>
+
+<script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+</script>
+<div class="brand-tag">
+    made with ❤️ by <span>madewithPC</span>
+</div>
 </body>
 </html>

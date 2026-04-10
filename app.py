@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask, render_template, request
 from flask_sqlalchemy import SQLAlchemy
 import PyPDF2
@@ -7,7 +9,7 @@ from PyPDF2.errors import PdfReadError
 # ------------------ APP SETUP ------------------
 app = Flask(__name__)
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///resumes.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///resumes.db")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
@@ -173,4 +175,4 @@ def history():
 
 # ------------------ RUN APP ------------------
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
